@@ -170,8 +170,8 @@ class PyTerrierIntegration():
 
         return np.array(res)
 
-    def _features_transformer(self, run, id_col, name, feature_selection=None, map_features=None):
-        from tira.pyterrier_util import TiraApplyFeatureTransformer
+    def _features_transformer(self, run, id_col, name, feature_selection=None, map_features=None, category=None):
+        from tira.pyterrier_util import TiraApplyFeatureTransformer, TiraNamedFeatureTransformer
 
         cols = [col for col in run.columns if col != id_col]
         if feature_selection is not None:
@@ -179,17 +179,17 @@ class PyTerrierIntegration():
 
         mapping = {str(row[id_col]): self._get_features_from_row(row, cols, map_features) for _, row in run.iterrows()}
 
-        return TiraApplyFeatureTransformer(mapping, (id_col,), name)
+        return TiraNamedFeatureTransformer(TiraApplyFeatureTransformer(mapping, (id_col,), name), cols, category)
 
     def doc_features(self, approach, dataset, file_selection=('/*.jsonl', '/*.jsonl.gz'), feature_selection=None, map_features=None):
         run = self.pd.transform_documents(approach, dataset, file_selection)
 
-        return self._features_transformer(run, 'docno', 'doc_features', feature_selection, map_features)
+        return self._features_transformer(run, 'docno', 'doc_features', feature_selection, map_features, category='doc')
 
     def query_features(self, approach, dataset, file_selection=('/*.jsonl', '/*.jsonl.gz'), feature_selection=None, map_features=None):
         run = self.pd.transform_queries(approach, dataset, file_selection)
 
-        return self._features_transformer(run, 'qid', 'query_features', feature_selection, map_features)
+        return self._features_transformer(run, 'qid', 'query_features', feature_selection, map_features, category='query')
 
     def reranker(self, approach, irds_id=None):
         from tira.pyterrier_util import TiraLocalExecutionRerankingTransformer

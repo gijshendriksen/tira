@@ -181,3 +181,25 @@ class TiraApplyFeatureTransformer(Transformer):
             value = value[str(row[col])]
 
         return value
+
+
+class TiraNamedFeatureTransformer(Transformer):
+    def __init__(self, feature_transformer: Transformer, feature_names: str | list[str], feature_categories: str | list[str] | None = None):
+        self.feature_transformer = feature_transformer
+        self.feature_names = feature_names if isinstance(feature_names, list) else [feature_names]
+        self.feature_categories = feature_categories if isinstance(feature_categories, list) else [feature_categories for _ in self.feature_names]
+
+        assert len(self.feature_names) == len(self.feature_categories), f'\n{self.feature_names}\n{self.feature_categories}'
+
+    def __pow__(self, right: Transformer) -> Transformer:
+        if isinstance(right, TiraNamedFeatureTransformer):
+            return TiraNamedFeatureTransformer(
+                self.feature_transformer ** right.feature_transformer,
+                self.feature_names + right.feature_names,
+                self.feature_categories + right.feature_categories,
+            )
+
+        return TiraNamedFeatureTransformer(self.feature_transformer ** right, self.feature_names + [str(right)], self.feature_categories + [None])
+
+    def transform(self, topics):
+        return self.feature_transformer.transform(topics)
